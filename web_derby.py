@@ -13,11 +13,23 @@ if "autenticado" not in st.session_state:
     st.stop()
 
 # --- 2. CONFIGURACION ---
-st.set_page_config(page_title="SISTEMA DERBY PRO", layout="wide")
+st.set_page_config(page_title="DerbySystem PRO", layout="wide")
 
-# Estilos visuales actualizados
 st.markdown("""
     <style>
+    /* ESTILO PARA EL NOMBRE DEL SOFTWARE */
+    .software-brand {
+        color: #555; 
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-size: 12px;
+        letter-spacing: 5px;
+        text-align: center;
+        text-transform: uppercase;
+        margin-top: -10px;
+        margin-bottom: 10px;
+        font-weight: 400;
+    }
+    
     .pelea-card { background-color: #1e1e1e; border: 2px solid #444; border-radius: 10px; padding: 12px; margin-bottom: 20px; color: white; }
     .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 16px; }
     .verde-text { color: #00c853; font-weight: bold; font-size: 16px; text-align: right; }
@@ -33,13 +45,13 @@ st.markdown("""
 
 DB_FILE = "datos_derby.txt"
 
+# --- FUNCIONES DE CARGA Y GUARDADO (Dinamicas) ---
 def cargar_datos():
     partidos = []
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "r", encoding="utf-8") as f:
             for linea in f:
                 p = linea.strip().split("|")
-                # Cargamos dinámicamente según lo que haya en el archivo
                 if len(p) >= 2:
                     d = {"PARTIDO": p[0]}
                     for i in range(1, len(p)):
@@ -50,7 +62,6 @@ def cargar_datos():
 def guardar_todos(lista):
     with open(DB_FILE, "w", encoding="utf-8") as f:
         for p in lista:
-            # Guardamos solo las columnas de peso que existan
             pesos = [str(v) for k, v in p.items() if k != "PARTIDO"]
             f.write(f"{p['PARTIDO']}|{'|'.join(pesos)}\n")
 
@@ -68,29 +79,29 @@ def generar_cotejo_justo(lista_original):
     return cotejo
 
 # --- 3. INTERFAZ ---
+# MARCA DEL SOFTWARE EN LA CIMA
+st.markdown('<p class="software-brand">DerbySystem</p>', unsafe_allow_html=True)
+
 tab1, tab2 = st.tabs(["📝 REGISTRO", "🏆 COTEJO"])
 
 with tab1:
-    st.title("Registro de Partidos")
-    
-    # NUEVO: Selector de tipo de Derby
-    tipo_derby = st.radio("Selecciona el tipo de Derby:", [2, 3, 4], horizontal=True, help="Esto ajusta cuántos pesos debes registrar")
+    st.subheader("Panel de Registro")
+    tipo_derby = st.radio("Configuración del Derby:", [2, 3, 4], horizontal=True, help="Selecciona el número de gallos por partido")
     
     partidos = cargar_datos()
     
     col1, col2 = st.columns([1, 2])
     with col1:
         with st.form("registro_form", clear_on_submit=True):
-            st.info(f"Derby de {tipo_derby} Gallos (1.800 - 2.680g)")
-            n = st.text_input("Nombre del Partido:").upper()
+            st.info(f"Rango: 1.800g - 2.680g")
+            n = st.text_input("NOMBRE DEL PARTIDO:").upper()
             
-            # Los campos de peso se crean dinámicamente
             pesos_input = []
             for i in range(1, tipo_derby + 1):
-                p = st.number_input(f"Peso {i}", 1.800, 2.680, 1.800, 0.001, format="%.3f")
+                p = st.number_input(f"Peso Gallo {i}", 1.800, 2.680, 1.800, 0.001, format="%.3f")
                 pesos_input.append(p)
             
-            if st.form_submit_button("💾 GUARDAR"):
+            if st.form_submit_button("💾 GUARDAR EN LISTA"):
                 if n:
                     nuevo_partido = {"PARTIDO": n}
                     for idx, val in enumerate(pesos_input):
@@ -102,17 +113,15 @@ with tab1:
         if partidos:
             df = pd.DataFrame(partidos)
             df.index = df.index + 1
-            # Formatear solo las columnas de peso que existan en el DataFrame
             cols_peso = [c for c in df.columns if "Peso" in c]
             st.dataframe(df.style.format(subset=cols_peso, formatter="{:.3f}"), use_container_width=True)
-            if st.button("🗑️ BORRAR TODO"):
+            if st.button("🗑️ LIMPIAR TODO EL EVENTO"):
                 if os.path.exists(DB_FILE): os.remove(DB_FILE)
                 st.rerun()
 
 with tab2:
     partidos = cargar_datos()
     if len(partidos) >= 2:
-        # Detectar cuántas rondas hay en los datos guardados
         num_rondas = len([c for c in partidos[0].keys() if "Peso" in c])
         peleas = generar_cotejo_justo(partidos)
         
@@ -142,6 +151,6 @@ with tab2:
                             <div class="btn-check">G [ ]</div>
                         </div>
                     </div>
-                    <div class="{clase_dif}">DIFERENCIA: {dif:.3f}</div>
+                    <div class="{clase_dif}">DIFERENCIA DE PESO: {dif:.3f}</div>
                 </div>
                 """, unsafe_allow_html=True)
