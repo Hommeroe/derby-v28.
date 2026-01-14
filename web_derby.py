@@ -1,3 +1,4 @@
+import streamlit as st
 # --- SISTEMA DE SEGURIDAD ---
 if "autenticado" not in st.session_state:
     st.title("🔐 Acceso Privado - Derby V28")
@@ -9,7 +10,6 @@ if "autenticado" not in st.session_state:
         else:
             st.error("Clave incorrecta")
     st.stop()
-import streamlit as st
 import pandas as pd
 import random
 import os
@@ -212,4 +212,5 @@ if st.button("🟢 GENERAR COTEJO E IMPRIMIR REPORTE", type="primary"):
         # 3. Mostrar botón de descarga y vista previa
         st.download_button("📥 DESCARGAR HOJA PARA IMPRIMIR", html, file_name="cotejos_online.html", mime="text/html")
         st.components.v1.html(html, height=600, scrolling=True)
+
 
