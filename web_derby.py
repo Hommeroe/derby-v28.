@@ -70,7 +70,7 @@ with st.expander("➕ REGISTRAR PARTIDO", expanded=False):
             st.success("¡Guardado!")
             st.rerun()
 
-# --- 4. COTEJO POR RONDAS (MODO VERTICAL) ---
+# --- 4. COTEJO POR RONDAS CON ANILLO AUTOMÁTICO ---
 partidos = cargar_datos()
 if len(partidos) >= 2:
     st.subheader("📋 Cotejo Oficial")
@@ -83,13 +83,18 @@ if len(partidos) >= 2:
                 p_verde = partidos[i+1]
                 dif = abs(p_rojo[col_p] - p_verde[col_p])
                 
+                # --- AQUÍ SE LLENA EL ANILLO EN AUTOMÁTICO ---
+                # Asigna 001, 002, 003... según la posición en la lista
+                anillo_r = f"{(i + 1):03}"
+                anillo_v = f"{(i + 2):03}"
+                
                 # Formato de tabla limpia para celular
                 st.markdown(f"""
-                *Pelea #{(i//2)+1}*
+                Pelea #{(i//2)+1}
                 | Lado | Partido | Peso | Anillo |
                 | :--- | :--- | :--- | :--- |
-                | <span class='rojo'>🔴 ROJO</span> | {p_rojo['PARTIDO']} | {p_rojo[col_p]:.3f} | __ |
-                | <span class='verde'>🟢 VERDE</span> | {p_verde['PARTIDO']} | {p_verde[col_p]:.3f} | __ |
+                | <span class='rojo'>🔴 ROJO</span> | {p_rojo['PARTIDO']} | {p_rojo[col_p]:.3f} | *{anillo_r}* |
+                | <span class='verde'>🟢 VERDE</span> | {p_verde['PARTIDO']} | {p_verde[col_p]:.3f} | *{anillo_v}* |
                 | | | Dif: | {dif:.3f} |
                 """, unsafe_allow_html=True)
                 st.divider()
