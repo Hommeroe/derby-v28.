@@ -68,16 +68,15 @@ with tab1:
     
     col1, col2 = st.columns(2)
     with col1:
-        # Formulario con validación de rango
         with st.form("mi_formulario", clear_on_submit=True):
-            st.info("Rango permitido: 1800g a 2680g")
+            st.info("Rango: 1.800 a 2.680 gr")
             n = st.text_input("Nombre del Partido:").upper()
             
-            # Ajuste de rango: min_value y max_value
-            p1 = st.number_input("Peso 1", min_value=1800.0, max_value=2680.0, value=1800.0, step=1.0, format="%.3f")
-            p2 = st.number_input("Peso 2", min_value=1800.0, max_value=2680.0, value=1800.0, step=1.0, format="%.3f")
-            p3 = st.number_input("Peso 3", min_value=1800.0, max_value=2680.0, value=1800.0, step=1.0, format="%.3f")
-            p4 = st.number_input("Peso 4", min_value=1800.0, max_value=2680.0, value=1800.0, step=1.0, format="%.3f")
+            # Ajuste de decimales limpios
+            p1 = st.number_input("Peso 1", min_value=1.800, max_value=2.680, value=1.800, step=0.001, format="%.3f")
+            p2 = st.number_input("Peso 2", min_value=1.800, max_value=2.680, value=1.800, step=0.001, format="%.3f")
+            p3 = st.number_input("Peso 3", min_value=1.800, max_value=2.680, value=1.800, step=0.001, format="%.3f")
+            p4 = st.number_input("Peso 4", min_value=1.800, max_value=2.680, value=1.800, step=0.001, format="%.3f")
             
             submit = st.form_submit_button("💾 GUARDAR REGISTRO")
             
@@ -85,13 +84,10 @@ with tab1:
                 if n:
                     partidos.append({"PARTIDO": n, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
                     guardar_todos(partidos)
-                    st.success(f"¡{n} Guardado con éxito!")
+                    st.success(f"¡{n} Guardado!")
                     st.rerun()
-                else:
-                    st.error("Por favor, ingresa el nombre del partido.")
     
     with col2:
-        st.subheader("Lista Actual")
         if partidos:
             st.dataframe(pd.DataFrame(partidos), use_container_width=True)
             if st.button("🗑️ BORRAR TODO"):
