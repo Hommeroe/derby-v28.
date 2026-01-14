@@ -15,7 +15,6 @@ if "autenticado" not in st.session_state:
 # --- 2. CONFIGURACION ---
 st.set_page_config(page_title="DERBY V28", layout="wide")
 
-# Estilos visuales
 st.markdown("""
     <style>
     .pelea-card { background-color: #1e1e1e; border: 2px solid #444; border-radius: 10px; padding: 12px; margin-bottom: 20px; color: white; }
@@ -69,30 +68,27 @@ with tab1:
     
     col1, col2 = st.columns(2)
     with col1:
-        # Usamos nombres completos: Peso 1, Peso 2, etc.
-        # El value=st.session_state hace que se limpie solo
-        n = st.text_input("Nombre del Partido:", key="n_in").upper()
-        p1 = st.number_input("Peso 1", format="%.3f", key="p1_in")
-        p2 = st.number_input("Peso 2", format="%.3f", key="p2_in")
-        p3 = st.number_input("Peso 3", format="%.3f", key="p3_in")
-        p4 = st.number_input("Peso 4", format="%.3f", key="p4_in")
-        
-        if st.button("💾 GUARDAR Y LIMPIAR"):
-            if n:
-                partidos.append({"PARTIDO": n, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
-                guardar_todos(partidos)
-                # Esta es la forma correcta de limpiar sin errores
-                st.session_state.n_in = ""
-                st.session_state.p1_in = 0.0
-                st.session_state.p2_in = 0.0
-                st.session_state.p3_in = 0.0
-                st.session_state.p4_in = 0.0
-                st.rerun()
+        # SOLUCIÓN: Usamos un FORMULARIO que se limpia solo (clear_on_submit)
+        with st.form("mi_formulario", clear_on_submit=True):
+            n = st.text_input("Nombre del Partido:").upper()
+            p1 = st.number_input("Peso 1", format="%.3f", value=0.0)
+            p2 = st.number_input("Peso 2", format="%.3f", value=0.0)
+            p3 = st.number_input("Peso 3", format="%.3f", value=0.0)
+            p4 = st.number_input("Peso 4", format="%.3f", value=0.0)
+            
+            submit = st.form_submit_button("💾 GUARDAR REGISTRO")
+            
+            if submit:
+                if n:
+                    partidos.append({"PARTIDO": n, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
+                    guardar_todos(partidos)
+                    st.success(f"¡{n} Guardado!")
+                    st.rerun()
     
     with col2:
         st.subheader("Lista Actual")
         if partidos:
-            st.table(pd.DataFrame(partidos))
+            st.dataframe(pd.DataFrame(partidos), use_container_width=True)
             if st.button("🗑️ BORRAR TODO"):
                 if os.path.exists(DB_FILE): os.remove(DB_FILE)
                 st.rerun()
@@ -117,7 +113,7 @@ with tab2:
                         </div>
                         <div class="centro-vs">
                             <div style="font-weight: bold; font-size: 14px;">VS</div>
-                            <div class="btn-check">E [ ]</div>
+                            <div class="btn-check" style="margin-top:10px;">E [ ]</div>
                         </div>
                         <div class="lado" style="text-align: right;">
                             <div class="verde-text">{ver['PARTIDO']}</div>
