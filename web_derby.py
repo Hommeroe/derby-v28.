@@ -88,4 +88,4 @@ if partidos:
         
         # Botón para descargar reporte
         csv = df.to_csv(index=False).encode('utf-8')
-        st.download_button("📥 DESCARGAR REPORTE PARA IMPRIMIR", csv, "cotejo_derby.csv", "text/csv", use_container_width=True
+        st.download_button("📥 DESCARGAR REPORTE PARA IMPRIMIR", csv, "cotejo_derby.csv", "text/csv", use_container_width=True)
