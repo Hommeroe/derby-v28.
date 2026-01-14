@@ -15,6 +15,14 @@ if "autenticado" not in st.session_state:
 # --- 2. CONFIGURACION ---
 st.set_page_config(page_title="DERBY V28", layout="wide")
 
+# Función para limpiar el formulario después de guardar
+def limpiar_formulario():
+    st.session_state["partido_input"] = ""
+    st.session_state["peso1"] = 0.0
+    st.session_state["peso2"] = 0.0
+    st.session_state["peso3"] = 0.0
+    st.session_state["peso4"] = 0.0
+
 st.markdown("""
     <style>
     .pelea-card { 
@@ -32,20 +40,9 @@ st.markdown("""
     .lado-rojo { width: 42%; text-align: left; }
     .lado-verde { width: 42%; text-align: right; }
     .centro-vs { width: 16%; text-align: center; }
-    
-    .btn-check { 
-        border: 1px solid #777; 
-        padding: 2px 5px; 
-        border-radius: 3px; 
-        font-size: 11px; 
-        display: inline-block; 
-        margin-top: 5px;
-        background: #222;
-    }
+    .btn-check { border: 1px solid #777; padding: 2px 5px; border-radius: 3px; font-size: 11px; display: inline-block; margin-top: 5px; background: #222; }
     .info-sub { font-size: 12px; color: #bbb; margin-top: 2px; }
     .dif-text { text-align: center; font-size: 10px; color: #666; border-top: 1px solid #333; margin-top: 10px; padding-top: 5px; }
-    
-    @media print { .no-print { display: none !important; } }
     </style>
     """, unsafe_allow_html=True)
 
@@ -93,16 +90,19 @@ with tab1:
     partidos = cargar_datos()
     col1, col2 = st.columns(2)
     with col1:
-        # CAMBIO SOLICITADO: Etiquetas mas largas
-        n = st.text_input("Nombre del Partido:").upper()
+        # Usamos 'key' para poder limpiar los campos automáticamente
+        n = st.text_input("Nombre del Partido:", key="partido_input").upper()
         p1 = st.number_input("Peso 1", format="%.3f", key="peso1")
         p2 = st.number_input("Peso 2", format="%.3f", key="peso2")
         p3 = st.number_input("Peso 3", format="%.3f", key="peso3")
         p4 = st.number_input("Peso 4", format="%.3f", key="peso4")
+        
         if st.button("💾 GUARDAR"):
             if n:
                 partidos.append({"PARTIDO": n, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
-                guardar_todos(partidos); st.rerun()
+                guardar_todos(partidos)
+                limpiar_formulario() # LLAMADA A LA FUNCIÓN DE LIMPIEZA
+                st.rerun()
     with col2:
         if partidos:
             st.dataframe(pd.DataFrame(partidos), use_container_width=True)
