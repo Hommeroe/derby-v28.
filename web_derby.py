@@ -13,26 +13,39 @@ if "autenticado" not in st.session_state:
     st.stop()
 
 # --- 2. CONFIGURACION ---
-st.set_page_config(page_title="DERBY V28 - FINAL", layout="wide")
+st.set_page_config(page_title="DERBY V28", layout="wide")
 
 st.markdown("""
     <style>
     .pelea-card { 
         background-color: #1e1e1e; 
         border: 2px solid #444; 
-        border-radius: 12px; 
-        padding: 15px; 
-        margin-bottom: 25px; 
+        border-radius: 10px; 
+        padding: 12px; 
+        margin-bottom: 20px; 
         color: white; 
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: sans-serif;
     }
-    .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 1.1em; }
-    .verde-text { color: #00c853; font-weight: bold; font-size: 1.1em; }
-    .fila-pelea { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
-    .lado { width: 42%; }
-    .centro { width: 15%; text-align: center; }
-    .casilla-voto { border: 1px solid #999; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em; display: inline-block; margin-top: 5px; }
-    .footer-pelea { text-align: center; margin-top: 15px; font-size: 0.8em; color: #777; border-top: 1px solid #333; padding-top: 8px; }
+    .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 16px; }
+    .verde-text { color: #00c853; font-weight: bold; font-size: 16px; text-align: right; }
+    .fila-principal { display: flex; justify-content: space-between; align-items: flex-start; }
+    .lado-rojo { width: 40%; text-align: left; }
+    .lado-verde { width: 40%; text-align: right; }
+    .centro-vs { width: 20%; text-align: center; }
+    
+    /* Casillas G y E mas pequeñas */
+    .btn-check { 
+        border: 1px solid #777; 
+        padding: 1px 4px; 
+        border-radius: 3px; 
+        font-size: 11px; 
+        display: inline-block; 
+        margin-top: 4px;
+        background: #222;
+    }
+    .info-sub { font-size: 12px; color: #bbb; margin-top: 2px; }
+    .dif-text { text-align: center; font-size: 10px; color: #666; border-top: 1px solid #333; margin-top: 10px; padding-top: 5px; }
+    
     @media print { .no-print { display: none !important; } }
     </style>
     """, unsafe_allow_html=True)
@@ -73,69 +86,57 @@ def generar_cotejo_justo(lista_original):
             cotejo.append((rojo, verde))
     return cotejo
 
-# --- 3. PESTAÑAS ---
-tab1, tab2 = st.tabs(["📝 REGISTRO", "🏆 COTEJO FINAL"])
+# --- 3. INTERFAZ ---
+tab1, tab2 = st.tabs(["📝 REGISTRO", "🏆 COTEJO"])
 
 with tab1:
-    st.title("Registro de Pesos")
+    st.title("Registro")
     partidos = cargar_datos()
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Entrada de Datos")
-        n = st.text_input("Nombre del Partido:").upper()
-        p1 = st.number_input("Peso Ronda 1", format="%.3f", key="p1")
-        p2 = st.number_input("Peso Ronda 2", format="%.3f", key="p2")
-        p3 = st.number_input("Peso Ronda 3", format="%.3f", key="p3")
-        p4 = st.number_input("Peso Ronda 4", format="%.3f", key="p4")
-        if st.button("💾 GUARDAR REGISTRO", use_container_width=True):
+        n = st.text_input("Partido:").upper()
+        p1 = st.number_input("P1", format="%.3f")
+        p2 = st.number_input("P2", format="%.3f")
+        p3 = st.number_input("P3", format="%.3f")
+        p4 = st.number_input("P4", format="%.3f")
+        if st.button("💾 GUARDAR"):
             if n:
                 partidos.append({"PARTIDO": n, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
                 guardar_todos(partidos); st.rerun()
     with col2:
-        st.subheader("Partidos Registrados")
         if partidos:
             st.dataframe(pd.DataFrame(partidos), use_container_width=True)
-            if st.button("🗑️ REINICIAR TODO EL EVENTO"):
+            if st.button("🗑️ BORRAR TODO"):
                 if os.path.exists(DB_FILE): os.remove(DB_FILE); st.rerun()
 
 with tab2:
     partidos = cargar_datos()
     if len(partidos) >= 2:
-        st.title("Hoja de Cotejo Oficial")
         peleas = generar_cotejo_justo(partidos)
-
         for r in range(1, 5):
             st.markdown(f"### RONDA {r}")
             col_p = f"P{r}"
-            
             for i, (roj, ver) in enumerate(peleas):
                 dif = abs(roj[col_p] - ver[col_p])
-                
                 st.markdown(f"""
                 <div class="pelea-card">
-                    <div style="text-align: center; border-bottom: 1px solid #444; padding-bottom: 5px; font-weight: bold; letter-spacing: 2px;">
-                        PELEA #{i+1}
-                    </div>
-                    <div class="fila-pelea">
-                        <div class="lado">
+                    <div style="text-align: center; font-size: 10px; color: #888; margin-bottom: 8px;">PELEA #{i+1}</div>
+                    <div class="fila-principal">
+                        <div class="lado-rojo">
                             <div class="rojo-text">{roj['PARTIDO']}</div>
-                            <div style="margin-top:5px;">P: {roj[col_p]:.3f} | A: {(i*2)+1:03}</div>
-                            <div class="casilla-voto">G [ ]</div>
+                            <div class="info-sub">P: {roj[col_p]:.3f} | A: {(i*2)+1:03}</div>
+                            <div class="btn-check">G [ ]</div>
                         </div>
-                        <div class="centro">
-                            <div style="font-weight: bold; font-size: 1.2em;">VS</div>
-                            <div class="casilla-voto" style="margin-top:10px;">E [ ]</div>
+                        <div class="centro-vs">
+                            <div style="font-weight: bold; font-size: 14px;">VS</div>
+                            <div class="btn-check">E [ ]</div>
                         </div>
-                        <div class="lado" style="text-align: right;">
+                        <div class="lado-verde">
                             <div class="verde-text">{ver['PARTIDO']}</div>
-                            <div style="margin-top:5px;">P: {ver[col_p]:.3f} | A: {(i*2)+2:03}</div>
-                            <div class="casilla-voto">G [ ]</div>
+                            <div class="info-sub">P: {ver[col_p]:.3f} | A: {(i*2)+2:03}</div>
+                            <div class="btn-check">G [ ]</div>
                         </div>
                     </div>
-                    <div class="footer-pelea">
-                        DIFERENCIA: {dif:.3f}
-                    </div>
+                    <div class="dif-text">DIFERENCIA: {dif:.3f}</div>
                 </div>
                 """, unsafe_allow_html=True)
-    else:
-        st.info("Registre los partidos en la pestaña anterior para generar el cotejo.")
