@@ -1,3 +1,14 @@
+# --- SISTEMA DE SEGURIDAD ---
+if "autenticado" not in st.session_state:
+    st.title("🔐 Acceso Privado - Derby V28")
+    password = st.text_input("Ingresa la clave del Palenque:", type="password")
+    if st.button("Entrar"):
+        if password == "2026":  # <--- Esta será tu clave
+            st.session_state["autenticado"] = True
+            st.rerun()
+        else:
+            st.error("Clave incorrecta")
+    st.stop()
 import streamlit as st
 import pandas as pd
 import random
@@ -201,3 +212,4 @@ if st.button("🟢 GENERAR COTEJO E IMPRIMIR REPORTE", type="primary"):
         # 3. Mostrar botón de descarga y vista previa
         st.download_button("📥 DESCARGAR HOJA PARA IMPRIMIR", html, file_name="cotejos_online.html", mime="text/html")
         st.components.v1.html(html, height=600, scrolling=True)
+
