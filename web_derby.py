@@ -17,26 +17,8 @@ st.set_page_config(page_title="DerbySystem PRO", layout="wide")
 
 st.markdown("""
     <style>
-    .software-brand {
-        color: #555; 
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        font-size: 12px;
-        letter-spacing: 5px;
-        text-align: center;
-        text-transform: uppercase;
-        margin-top: -10px;
-        margin-bottom: 10px;
-    }
-    .footer-hommer {
-        text-align: center;
-        color: #666;
-        font-size: 11px;
-        font-family: 'Courier New', Courier, monospace;
-        margin-top: 50px;
-        padding-top: 20px;
-        border-top: 1px solid #333;
-        letter-spacing: 2px;
-    }
+    .software-brand { color: #555; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 12px; letter-spacing: 5px; text-align: center; text-transform: uppercase; margin-top: -10px; margin-bottom: 10px; }
+    .footer-hommer { text-align: center; color: #666; font-size: 11px; font-family: 'Courier New', Courier, monospace; margin-top: 50px; padding-top: 20px; border-top: 1px solid #333; letter-spacing: 2px; }
     .pelea-card { background-color: #1e1e1e; border: 2px solid #444; border-radius: 10px; padding: 12px; margin-bottom: 20px; color: white; }
     .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 16px; }
     .verde-text { color: #00c853; font-weight: bold; font-size: 16px; text-align: right; }
@@ -95,60 +77,85 @@ with tab1:
     
     partidos = cargar_datos()
     
+    # Lógica para Editar
+    if "edit_index" not in st.session_state:
+        st.session_state.edit_index = None
+
     col1, col2 = st.columns([1, 2])
     with col1:
-        with st.form("registro_form", clear_on_submit=True):
-            st.info(f"Rango: 1.800g - 2.680g")
-            n = st.text_input("NOMBRE DEL PARTIDO:").upper()
+        # Valores por defecto para el formulario
+        default_name = ""
+        default_weights = [1.800] * tipo_derby
+        
+        if st.session_state.edit_index is not None:
+            p_edit = partidos[st.session_state.edit_index]
+            default_name = p_edit["PARTIDO"]
+            for i in range(tipo_derby):
+                default_weights[i] = p_edit.get(f"Peso {i+1}", 1.800)
+
+        with st.form("registro_form", clear_on_submit=(st.session_state.edit_index is None)):
+            st.info("Modo: EDITAR" if st.session_state.edit_index is not None else "Modo: NUEVO REGISTRO")
+            n = st.text_input("NOMBRE DEL PARTIDO:", value=default_name).upper()
             pesos_input = []
             for i in range(1, tipo_derby + 1):
-                p = st.number_input(f"Peso Gallo {i}", 1.800, 2.680, 1.800, 0.001, format="%.3f")
+                p = st.number_input(f"Peso Gallo {i}", 1.800, 2.680, default_weights[i-1], 0.001, format="%.3f")
                 pesos_input.append(p)
             
-            if st.form_submit_button("💾 GUARDAR EN LISTA"):
-                if n:
-                    nuevo_partido = {"PARTIDO": n}
-                    for idx, val in enumerate(pesos_input):
-                        nuevo_partido[f"Peso {idx+1}"] = val
-                    partidos.append(nuevo_partido)
-                    guardar_todos(partidos); st.rerun()
-    
+            # Botones en la misma fila
+            c_save, c_edit = st.columns(2)
+            with c_save:
+                btn_save = st.form_submit_button("💾 GUARDAR")
+            with c_edit:
+                btn_cancel = st.form_submit_button("🚫 CANCELAR")
+
+            if btn_save and n:
+                nuevo_p = {"PARTIDO": n}
+                for idx, val in enumerate(pesos_input):
+                    nuevo_p[f"Peso {idx+1}"] = val
+                
+                if st.session_state.edit_index is not None:
+                    partidos[st.session_state.edit_index] = nuevo_p
+                    st.session_state.edit_index = None
+                else:
+                    partidos.append(nuevo_p)
+                
+                guardar_todos(partidos)
+                st.rerun()
+            
+            if btn_cancel:
+                st.session_state.edit_index = None
+                st.rerun()
+
     with col2:
         if partidos:
             df = pd.DataFrame(partidos)
             df.index = df.index + 1
             cols_peso = [c for c in df.columns if "Peso" in c]
             st.dataframe(df.style.format(subset=cols_peso, formatter="{:.3f}"), use_container_width=True)
+            
+            # Selector para elegir cuál editar
+            idx_to_edit = st.selectbox("Selecciona para editar/corregir:", range(1, len(partidos) + 1), format_func=lambda x: f"Partido {x}: {partidos[x-1]['PARTIDO']}")
+            if st.button("✏️ EDITAR SELECCIONADO"):
+                st.session_state.edit_index = idx_to_edit - 1
+                st.rerun()
+
             if st.button("🗑️ LIMPIAR TODO EL EVENTO"):
                 if os.path.exists(DB_FILE): os.remove(DB_FILE)
+                st.session_state.edit_index = None
                 st.rerun()
     
-    st.markdown('<p class="footer-hommer">Created by HommerDesigns’s</p>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-hommer">Creado por HommerDesigns’s</p>', unsafe_allow_html=True)
 
 with tab2:
     partidos = cargar_datos()
     if len(partidos) >= 2:
         num_rondas = len([c for c in partidos[0].keys() if "Peso" in c])
         peleas = generar_cotejo_justo(partidos)
-        
         for r in range(1, num_rondas + 1):
             st.markdown(f"### RONDA {r}")
             col_p = f"Peso {r}"
             for i, (roj, ver) in enumerate(peleas):
                 dif = abs(roj[col_p] - ver[col_p])
                 clase_dif = "dif-alerta" if dif > 0.060 else "dif-normal"
-                st.markdown(f"""
-                <div class="pelea-card">
-                    <div style="text-align: center; font-size: 10px; color: #888; margin-bottom: 8px;">PELEA #{i+1}</div>
-                    <div class="fila-principal">
-                        <div class="lado"><div class="rojo-text">{roj['PARTIDO']}</div><div class="info-sub">P: {roj[col_p]:.3f} | A: {(i*2)+1:03}</div><div class="btn-check">G [ ]</div></div>
-                        <div class="centro-vs"><div style="font-weight: bold; font-size: 14px;">VS</div><div class="btn-check" style="margin-top:10px;">E [ ]</div></div>
-                        <div class="lado" style="text-align: right;"><div class="verde-text">{ver['PARTIDO']}</div><div class="info-sub">P: {ver[col_p]:.3f} | A: {(i*2)+2:03}</div><div class="btn-check">G [ ]</div></div>
-                    </div>
-                    <div class="{clase_dif}">DIFERENCIA DE PESO: {dif:.3f}</div>
-                </div>
-                """, unsafe_allow_html=True)
-
-    st.markdown('<p class="footer-hommer">Created by HommerDesigns’s</p>', unsafe_allow_html=True)
-
-
+                st.markdown(f'<div class="pelea-card"><div style="text-align: center; font-size: 10px; color: #888; margin-bottom: 8px;">PELEA #{i+1}</div><div class="fila-principal"><div class="lado"><div class="rojo-text">{roj["PARTIDO"]}</div><div class="info-sub">P: {roj[col_p]:.3f} | A: {(i*2)+1:03}</div><div class="btn-check">G [ ]</div></div><div class="centro-vs"><div style="font-weight: bold; font-size: 14px;">VS</div><div class="btn-check" style="margin-top:10px;">E [ ]</div></div><div class="lado" style="text-align: right;"><div class="verde-text">{ver["PARTIDO"]}</div><div class="info-sub">P: {ver[col_p]:.3f} | A: {(i*2)+2:03}</div><div class="btn-check">G [ ]</div></div></div><div class="{clase_dif}">DIFERENCIA DE PESO: {dif:.3f}</div></div>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-hommer">Creado por HommerDesigns’s</p>', unsafe_allow_html=True)
