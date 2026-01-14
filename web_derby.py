@@ -123,7 +123,7 @@ with tab1:
                 if os.path.exists(DB_FILE): os.remove(DB_FILE)
                 st.rerun()
     
-    st.markdown('<p class="footer-hommer">Creado por HommerDesigns’s</p>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-hommer">Created by HommerDesigns’s</p>', unsafe_allow_html=True)
 
 with tab2:
     partidos = cargar_datos()
@@ -150,4 +150,5 @@ with tab2:
                 """, unsafe_allow_html=True)
 
     st.markdown('<p class="footer-hommer">Created by HommerDesigns’s</p>', unsafe_allow_html=True)
+
 
