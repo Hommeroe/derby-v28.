@@ -13,7 +13,7 @@ if "autenticado" not in st.session_state:
     st.stop()
 
 # --- 2. CONFIGURACION ---
-st.set_page_config(page_title="DERBY V28", layout="wide")
+st.set_page_config(page_title="DERBY V28 - PRO", layout="wide")
 
 st.markdown("""
     <style>
@@ -25,7 +25,8 @@ st.markdown("""
     .centro-vs { width: 16%; text-align: center; }
     .btn-check { border: 1px solid #777; padding: 2px 5px; border-radius: 3px; font-size: 11px; display: inline-block; margin-top: 5px; background: #222; }
     .info-sub { font-size: 12px; color: #bbb; margin-top: 2px; }
-    .dif-text { text-align: center; font-size: 10px; color: #666; border-top: 1px solid #333; margin-top: 10px; padding-top: 5px; }
+    .dif-normal { text-align: center; font-size: 11px; color: #888; border-top: 1px solid #333; margin-top: 10px; padding-top: 5px; }
+    .dif-alerta { text-align: center; font-size: 12px; color: #ff4b4b; font-weight: bold; border-top: 2px solid #ff4b4b; margin-top: 10px; padding-top: 5px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -38,13 +39,13 @@ def cargar_datos():
             for linea in f:
                 p = linea.strip().split("|")
                 if len(p) == 5:
-                    try: partidos.append({"PARTIDO": p[0], "P1": float(p[1]), "P2": float(p[2]), "P3": float(p[3]), "P4": float(p[4])})
+                    try: partidos.append({"PARTIDO": p[0], "Peso 1": float(p[1]), "Peso 2": float(p[2]), "Peso 3": float(p[3]), "Peso 4": float(p[4])})
                     except: continue
     return partidos
 
 def guardar_todos(lista):
     with open(DB_FILE, "w", encoding="utf-8") as f:
-        for p in lista: f.write(f"{p['PARTIDO']}|{p['P1']}|{p['P2']}|{p['P3']}|{p['P4']}\n")
+        for p in lista: f.write(f"{p['PARTIDO']}|{p['Peso 1']}|{p['Peso 2']}|{p['Peso 3']}|{p['Peso 4']}\n")
 
 def generar_cotejo_justo(lista_original):
     lista = lista_original.copy()
@@ -66,30 +67,26 @@ with tab1:
     st.title("Registro de Partidos")
     partidos = cargar_datos()
     
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 2])
     with col1:
-        with st.form("mi_formulario", clear_on_submit=True):
+        with st.form("registro_form", clear_on_submit=True):
             st.info("Rango: 1.800 a 2.680 gr")
             n = st.text_input("Nombre del Partido:").upper()
-            
-            # Ajuste de decimales limpios
-            p1 = st.number_input("Peso 1", min_value=1.800, max_value=2.680, value=1.800, step=0.001, format="%.3f")
-            p2 = st.number_input("Peso 2", min_value=1.800, max_value=2.680, value=1.800, step=0.001, format="%.3f")
-            p3 = st.number_input("Peso 3", min_value=1.800, max_value=2.680, value=1.800, step=0.001, format="%.3f")
-            p4 = st.number_input("Peso 4", min_value=1.800, max_value=2.680, value=1.800, step=0.001, format="%.3f")
-            
-            submit = st.form_submit_button("💾 GUARDAR REGISTRO")
-            
-            if submit:
+            p1 = st.number_input("Peso 1", 1.800, 2.680, 1.800, 0.001, format="%.3f")
+            p2 = st.number_input("Peso 2", 1.800, 2.680, 1.800, 0.001, format="%.3f")
+            p3 = st.number_input("Peso 3", 1.800, 2.680, 1.800, 0.001, format="%.3f")
+            p4 = st.number_input("Peso 4", 1.800, 2.680, 1.800, 0.001, format="%.3f")
+            if st.form_submit_button("💾 GUARDAR"):
                 if n:
-                    partidos.append({"PARTIDO": n, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
-                    guardar_todos(partidos)
-                    st.success(f"¡{n} Guardado!")
-                    st.rerun()
+                    partidos.append({"PARTIDO": n, "Peso 1": p1, "Peso 2": p2, "Peso 3": p3, "Peso 4": p4})
+                    guardar_todos(partidos); st.rerun()
     
     with col2:
         if partidos:
-            st.dataframe(pd.DataFrame(partidos), use_container_width=True)
+            df = pd.DataFrame(partidos)
+            # AJUSTE: Empezar índice en 1
+            df.index = df.index + 1
+            st.dataframe(df.style.format(subset=["Peso 1", "Peso 2", "Peso 3", "Peso 4"], formatter="{:.3f}"), use_container_width=True)
             if st.button("🗑️ BORRAR TODO"):
                 if os.path.exists(DB_FILE): os.remove(DB_FILE)
                 st.rerun()
@@ -100,9 +97,11 @@ with tab2:
         peleas = generar_cotejo_justo(partidos)
         for r in range(1, 5):
             st.markdown(f"### RONDA {r}")
-            col_p = f"P{r}"
+            col_p = f"Peso {r}"
             for i, (roj, ver) in enumerate(peleas):
                 dif = abs(roj[col_p] - ver[col_p])
+                clase_dif = "dif-alerta" if dif > 0.060 else "dif-normal"
+                
                 st.markdown(f"""
                 <div class="pelea-card">
                     <div style="text-align: center; font-size: 10px; color: #888; margin-bottom: 8px;">PELEA #{i+1}</div>
@@ -122,6 +121,6 @@ with tab2:
                             <div class="btn-check">G [ ]</div>
                         </div>
                     </div>
-                    <div class="dif-text">DIFERENCIA: {dif:.3f}</div>
+                    <div class="{clase_dif}">DIFERENCIA: {dif:.3f}</div>
                 </div>
                 """, unsafe_allow_html=True)
