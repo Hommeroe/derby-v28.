@@ -29,18 +29,17 @@ st.markdown("""
     .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 16px; }
     .verde-text { color: #00c853; font-weight: bold; font-size: 16px; text-align: right; }
     .fila-principal { display: flex; justify-content: space-between; align-items: flex-start; }
-    .lado-rojo { width: 40%; text-align: left; }
-    .lado-verde { width: 40%; text-align: right; }
-    .centro-vs { width: 20%; text-align: center; }
+    .lado-rojo { width: 42%; text-align: left; }
+    .lado-verde { width: 42%; text-align: right; }
+    .centro-vs { width: 16%; text-align: center; }
     
-    /* Casillas G y E mas pequeñas */
     .btn-check { 
         border: 1px solid #777; 
-        padding: 1px 4px; 
+        padding: 2px 5px; 
         border-radius: 3px; 
         font-size: 11px; 
         display: inline-block; 
-        margin-top: 4px;
+        margin-top: 5px;
         background: #222;
     }
     .info-sub { font-size: 12px; color: #bbb; margin-top: 2px; }
@@ -94,11 +93,12 @@ with tab1:
     partidos = cargar_datos()
     col1, col2 = st.columns(2)
     with col1:
-        n = st.text_input("Partido:").upper()
-        p1 = st.number_input("P1", format="%.3f")
-        p2 = st.number_input("P2", format="%.3f")
-        p3 = st.number_input("P3", format="%.3f")
-        p4 = st.number_input("P4", format="%.3f")
+        # CAMBIO SOLICITADO: Etiquetas mas largas
+        n = st.text_input("Nombre del Partido:").upper()
+        p1 = st.number_input("Peso 1", format="%.3f", key="peso1")
+        p2 = st.number_input("Peso 2", format="%.3f", key="peso2")
+        p3 = st.number_input("Peso 3", format="%.3f", key="peso3")
+        p4 = st.number_input("Peso 4", format="%.3f", key="peso4")
         if st.button("💾 GUARDAR"):
             if n:
                 partidos.append({"PARTIDO": n, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
@@ -128,7 +128,7 @@ with tab2:
                             <div class="btn-check">G [ ]</div>
                         </div>
                         <div class="centro-vs">
-                            <div style="font-weight: bold; font-size: 14px;">VS</div>
+                            <div style="font-weight: bold; font-size: 14px; margin-bottom: 2px;">VS</div>
                             <div class="btn-check">E [ ]</div>
                         </div>
                         <div class="lado-verde">
