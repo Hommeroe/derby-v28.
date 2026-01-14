@@ -17,7 +17,6 @@ st.set_page_config(page_title="DerbySystem PRO", layout="wide")
 
 st.markdown("""
     <style>
-    /* ESTILO PARA EL NOMBRE DEL SOFTWARE */
     .software-brand {
         color: #555; 
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -27,9 +26,17 @@ st.markdown("""
         text-transform: uppercase;
         margin-top: -10px;
         margin-bottom: 10px;
-        font-weight: 400;
     }
-    
+    .footer-hommer {
+        text-align: center;
+        color: #666;
+        font-size: 11px;
+        font-family: 'Courier New', Courier, monospace;
+        margin-top: 50px;
+        padding-top: 20px;
+        border-top: 1px solid #333;
+        letter-spacing: 2px;
+    }
     .pelea-card { background-color: #1e1e1e; border: 2px solid #444; border-radius: 10px; padding: 12px; margin-bottom: 20px; color: white; }
     .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 16px; }
     .verde-text { color: #00c853; font-weight: bold; font-size: 16px; text-align: right; }
@@ -45,7 +52,6 @@ st.markdown("""
 
 DB_FILE = "datos_derby.txt"
 
-# --- FUNCIONES DE CARGA Y GUARDADO (Dinamicas) ---
 def cargar_datos():
     partidos = []
     if os.path.exists(DB_FILE):
@@ -79,14 +85,13 @@ def generar_cotejo_justo(lista_original):
     return cotejo
 
 # --- 3. INTERFAZ ---
-# MARCA DEL SOFTWARE EN LA CIMA
 st.markdown('<p class="software-brand">DerbySystem</p>', unsafe_allow_html=True)
 
 tab1, tab2 = st.tabs(["📝 REGISTRO", "🏆 COTEJO"])
 
 with tab1:
     st.subheader("Panel de Registro")
-    tipo_derby = st.radio("Configuración del Derby:", [2, 3, 4], horizontal=True, help="Selecciona el número de gallos por partido")
+    tipo_derby = st.radio("Configuración del Derby:", [2, 3, 4], horizontal=True)
     
     partidos = cargar_datos()
     
@@ -95,7 +100,6 @@ with tab1:
         with st.form("registro_form", clear_on_submit=True):
             st.info(f"Rango: 1.800g - 2.680g")
             n = st.text_input("NOMBRE DEL PARTIDO:").upper()
-            
             pesos_input = []
             for i in range(1, tipo_derby + 1):
                 p = st.number_input(f"Peso Gallo {i}", 1.800, 2.680, 1.800, 0.001, format="%.3f")
@@ -118,6 +122,9 @@ with tab1:
             if st.button("🗑️ LIMPIAR TODO EL EVENTO"):
                 if os.path.exists(DB_FILE): os.remove(DB_FILE)
                 st.rerun()
+    
+    # Firma HommerDesigns's al final de la hoja 1
+    st.markdown('<p class="footer-hommer">Creado por HommerDesigns’s</p>', unsafe_allow_html=True)
 
 with tab2:
     partidos = cargar_datos()
@@ -131,26 +138,17 @@ with tab2:
             for i, (roj, ver) in enumerate(peleas):
                 dif = abs(roj[col_p] - ver[col_p])
                 clase_dif = "dif-alerta" if dif > 0.060 else "dif-normal"
-                
                 st.markdown(f"""
                 <div class="pelea-card">
                     <div style="text-align: center; font-size: 10px; color: #888; margin-bottom: 8px;">PELEA #{i+1}</div>
                     <div class="fila-principal">
-                        <div class="lado">
-                            <div class="rojo-text">{roj['PARTIDO']}</div>
-                            <div class="info-sub">P: {roj[col_p]:.3f} | A: {(i*2)+1:03}</div>
-                            <div class="btn-check">G [ ]</div>
-                        </div>
-                        <div class="centro-vs">
-                            <div style="font-weight: bold; font-size: 14px;">VS</div>
-                            <div class="btn-check" style="margin-top:10px;">E [ ]</div>
-                        </div>
-                        <div class="lado" style="text-align: right;">
-                            <div class="verde-text">{ver['PARTIDO']}</div>
-                            <div class="info-sub">P: {ver[col_p]:.3f} | A: {(i*2)+2:03}</div>
-                            <div class="btn-check">G [ ]</div>
-                        </div>
+                        <div class="lado"><div class="rojo-text">{roj['PARTIDO']}</div><div class="info-sub">P: {roj[col_p]:.3f} | A: {(i*2)+1:03}</div><div class="btn-check">G [ ]</div></div>
+                        <div class="centro-vs"><div style="font-weight: bold; font-size: 14px;">VS</div><div class="btn-check" style="margin-top:10px;">E [ ]</div></div>
+                        <div class="lado" style="text-align: right;"><div class="verde-text">{ver['PARTIDO']}</div><div class="info-sub">P: {ver[col_p]:.3f} | A: {(i*2)+2:03}</div><div class="btn-check">G [ ]</div></div>
                     </div>
                     <div class="{clase_dif}">DIFERENCIA DE PESO: {dif:.3f}</div>
                 </div>
                 """, unsafe_allow_html=True)
+
+    # Firma HommerDesigns's al final de la hoja 2
+    st.markdown('<p class="footer-hommer">Cread
