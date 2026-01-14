@@ -149,4 +149,5 @@ with tab2:
                 </div>
                 """, unsafe_allow_html=True)
 
-    st.markdown('<p class="footer-hommer">Creado por HommerDesigns’s</p>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-hommer">Created by HommerDesigns’s</p>', unsafe_allow_html=True)
+
