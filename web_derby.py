@@ -15,30 +15,14 @@ if "autenticado" not in st.session_state:
 # --- 2. CONFIGURACION ---
 st.set_page_config(page_title="DERBY V28", layout="wide")
 
-# Función para limpiar el formulario después de guardar
-def limpiar_formulario():
-    st.session_state["partido_input"] = ""
-    st.session_state["peso1"] = 0.0
-    st.session_state["peso2"] = 0.0
-    st.session_state["peso3"] = 0.0
-    st.session_state["peso4"] = 0.0
-
+# Estilos visuales
 st.markdown("""
     <style>
-    .pelea-card { 
-        background-color: #1e1e1e; 
-        border: 2px solid #444; 
-        border-radius: 10px; 
-        padding: 12px; 
-        margin-bottom: 20px; 
-        color: white; 
-        font-family: sans-serif;
-    }
+    .pelea-card { background-color: #1e1e1e; border: 2px solid #444; border-radius: 10px; padding: 12px; margin-bottom: 20px; color: white; }
     .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 16px; }
     .verde-text { color: #00c853; font-weight: bold; font-size: 16px; text-align: right; }
     .fila-principal { display: flex; justify-content: space-between; align-items: flex-start; }
-    .lado-rojo { width: 42%; text-align: left; }
-    .lado-verde { width: 42%; text-align: right; }
+    .lado { width: 42%; }
     .centro-vs { width: 16%; text-align: center; }
     .btn-check { border: 1px solid #777; padding: 2px 5px; border-radius: 3px; font-size: 11px; display: inline-block; margin-top: 5px; background: #222; }
     .info-sub { font-size: 12px; color: #bbb; margin-top: 2px; }
@@ -55,15 +39,13 @@ def cargar_datos():
             for linea in f:
                 p = linea.strip().split("|")
                 if len(p) == 5:
-                    try:
-                        partidos.append({"PARTIDO": p[0], "P1": float(p[1]), "P2": float(p[2]), "P3": float(p[3]), "P4": float(p[4])})
-                    except ValueError: continue
+                    try: partidos.append({"PARTIDO": p[0], "P1": float(p[1]), "P2": float(p[2]), "P3": float(p[3]), "P4": float(p[4])})
+                    except: continue
     return partidos
 
 def guardar_todos(lista):
     with open(DB_FILE, "w", encoding="utf-8") as f:
-        for p in lista:
-            f.write(f"{p['PARTIDO']}|{p['P1']}|{p['P2']}|{p['P3']}|{p['P4']}\n")
+        for p in lista: f.write(f"{p['PARTIDO']}|{p['P1']}|{p['P2']}|{p['P3']}|{p['P4']}\n")
 
 def generar_cotejo_justo(lista_original):
     lista = lista_original.copy()
@@ -73,41 +55,47 @@ def generar_cotejo_justo(lista_original):
         encontrado = False
         for i in range(len(lista)):
             if lista[i]['PARTIDO'] != rojo['PARTIDO']:
-                verde = lista.pop(i)
-                cotejo.append((rojo, verde))
-                encontrado = True
-                break
+                verde = lista.pop(i); cotejo.append((rojo, verde)); encontrado = True; break
         if not encontrado:
-            verde = lista.pop(0)
-            cotejo.append((rojo, verde))
+            verde = lista.pop(0); cotejo.append((rojo, verde))
     return cotejo
 
 # --- 3. INTERFAZ ---
 tab1, tab2 = st.tabs(["📝 REGISTRO", "🏆 COTEJO"])
 
 with tab1:
-    st.title("Registro")
+    st.title("Registro de Partidos")
     partidos = cargar_datos()
+    
     col1, col2 = st.columns(2)
     with col1:
-        # Usamos 'key' para poder limpiar los campos automáticamente
-        n = st.text_input("Nombre del Partido:", key="partido_input").upper()
-        p1 = st.number_input("Peso 1", format="%.3f", key="peso1")
-        p2 = st.number_input("Peso 2", format="%.3f", key="peso2")
-        p3 = st.number_input("Peso 3", format="%.3f", key="peso3")
-        p4 = st.number_input("Peso 4", format="%.3f", key="peso4")
+        # Usamos nombres completos: Peso 1, Peso 2, etc.
+        # El value=st.session_state hace que se limpie solo
+        n = st.text_input("Nombre del Partido:", key="n_in").upper()
+        p1 = st.number_input("Peso 1", format="%.3f", key="p1_in")
+        p2 = st.number_input("Peso 2", format="%.3f", key="p2_in")
+        p3 = st.number_input("Peso 3", format="%.3f", key="p3_in")
+        p4 = st.number_input("Peso 4", format="%.3f", key="p4_in")
         
-        if st.button("💾 GUARDAR"):
+        if st.button("💾 GUARDAR Y LIMPIAR"):
             if n:
                 partidos.append({"PARTIDO": n, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
                 guardar_todos(partidos)
-                limpiar_formulario() # LLAMADA A LA FUNCIÓN DE LIMPIEZA
+                # Esta es la forma correcta de limpiar sin errores
+                st.session_state.n_in = ""
+                st.session_state.p1_in = 0.0
+                st.session_state.p2_in = 0.0
+                st.session_state.p3_in = 0.0
+                st.session_state.p4_in = 0.0
                 st.rerun()
+    
     with col2:
+        st.subheader("Lista Actual")
         if partidos:
-            st.dataframe(pd.DataFrame(partidos), use_container_width=True)
+            st.table(pd.DataFrame(partidos))
             if st.button("🗑️ BORRAR TODO"):
-                if os.path.exists(DB_FILE): os.remove(DB_FILE); st.rerun()
+                if os.path.exists(DB_FILE): os.remove(DB_FILE)
+                st.rerun()
 
 with tab2:
     partidos = cargar_datos()
@@ -122,16 +110,16 @@ with tab2:
                 <div class="pelea-card">
                     <div style="text-align: center; font-size: 10px; color: #888; margin-bottom: 8px;">PELEA #{i+1}</div>
                     <div class="fila-principal">
-                        <div class="lado-rojo">
+                        <div class="lado">
                             <div class="rojo-text">{roj['PARTIDO']}</div>
                             <div class="info-sub">P: {roj[col_p]:.3f} | A: {(i*2)+1:03}</div>
                             <div class="btn-check">G [ ]</div>
                         </div>
                         <div class="centro-vs">
-                            <div style="font-weight: bold; font-size: 14px; margin-bottom: 2px;">VS</div>
+                            <div style="font-weight: bold; font-size: 14px;">VS</div>
                             <div class="btn-check">E [ ]</div>
                         </div>
-                        <div class="lado-verde">
+                        <div class="lado" style="text-align: right;">
                             <div class="verde-text">{ver['PARTIDO']}</div>
                             <div class="info-sub">P: {ver[col_p]:.3f} | A: {(i*2)+2:03}</div>
                             <div class="btn-check">G [ ]</div>
