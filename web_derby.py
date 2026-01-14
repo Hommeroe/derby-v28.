@@ -123,7 +123,6 @@ with tab1:
                 if os.path.exists(DB_FILE): os.remove(DB_FILE)
                 st.rerun()
     
-    # Firma HommerDesigns's al final de la hoja 1
     st.markdown('<p class="footer-hommer">Creado por HommerDesigns’s</p>', unsafe_allow_html=True)
 
 with tab2:
@@ -150,5 +149,4 @@ with tab2:
                 </div>
                 """, unsafe_allow_html=True)
 
-    # Firma HommerDesigns's al final de la hoja 2
-    st.markdown('<p class="footer-hommer">Cread
+    st.markdown('<p class="footer-hommer">Creado por HommerDesigns’s</p>', unsafe_allow_html=True)
