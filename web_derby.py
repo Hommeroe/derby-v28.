@@ -13,7 +13,7 @@ if "autenticado" not in st.session_state:
     st.stop()
 
 # --- 2. CONFIGURACION ---
-st.set_page_config(page_title="DERBY V28 - JUEZ", layout="wide")
+st.set_page_config(page_title="DERBY V28 - FINAL", layout="wide")
 
 st.markdown("""
     <style>
@@ -21,15 +21,18 @@ st.markdown("""
         background-color: #1e1e1e; 
         border: 2px solid #444; 
         border-radius: 12px; 
-        padding: 20px; 
-        margin-bottom: 20px; 
+        padding: 15px; 
+        margin-bottom: 25px; 
         color: white; 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
-    .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 18px; }
-    .verde-text { color: #00c853; font-weight: bold; font-size: 18px; }
-    .fila-pelea { display: flex; justify-content: space-between; align-items: center; }
-    .lado { width: 45%; }
-    .casilla { border: 1px solid #777; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
+    .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 1.1em; }
+    .verde-text { color: #00c853; font-weight: bold; font-size: 1.1em; }
+    .fila-pelea { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+    .lado { width: 42%; }
+    .centro { width: 15%; text-align: center; }
+    .casilla-voto { border: 1px solid #999; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 0.9em; display: inline-block; margin-top: 5px; }
+    .footer-pelea { text-align: center; margin-top: 15px; font-size: 0.8em; color: #777; border-top: 1px solid #333; padding-top: 8px; }
     @media print { .no-print { display: none !important; } }
     </style>
     """, unsafe_allow_html=True)
@@ -74,33 +77,35 @@ def generar_cotejo_justo(lista_original):
 tab1, tab2 = st.tabs(["📝 REGISTRO", "🏆 COTEJO FINAL"])
 
 with tab1:
-    st.title("Control de Pesaje")
+    st.title("Registro de Pesos")
     partidos = cargar_datos()
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("Captura")
-        n = st.text_input("Nombre Partido:").upper()
-        p1 = st.number_input("Peso 1", format="%.3f", key="n1")
-        p2 = st.number_input("Peso 2", format="%.3f", key="n2")
-        p3 = st.number_input("Peso 3", format="%.3f", key="n3")
-        p4 = st.number_input("Peso 4", format="%.3f", key="n4")
-        if st.button("💾 GUARDAR"):
+        st.subheader("Entrada de Datos")
+        n = st.text_input("Nombre del Partido:").upper()
+        p1 = st.number_input("Peso Ronda 1", format="%.3f", key="p1")
+        p2 = st.number_input("Peso Ronda 2", format="%.3f", key="p2")
+        p3 = st.number_input("Peso Ronda 3", format="%.3f", key="p3")
+        p4 = st.number_input("Peso Ronda 4", format="%.3f", key="p4")
+        if st.button("💾 GUARDAR REGISTRO", use_container_width=True):
             if n:
                 partidos.append({"PARTIDO": n, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
                 guardar_todos(partidos); st.rerun()
     with col2:
-        st.subheader("Registrados")
+        st.subheader("Partidos Registrados")
         if partidos:
             st.dataframe(pd.DataFrame(partidos), use_container_width=True)
+            if st.button("🗑️ REINICIAR TODO EL EVENTO"):
+                if os.path.exists(DB_FILE): os.remove(DB_FILE); st.rerun()
 
 with tab2:
     partidos = cargar_datos()
     if len(partidos) >= 2:
-        st.title("📋 Hoja de Cotejo Oficial")
+        st.title("Hoja de Cotejo Oficial")
         peleas = generar_cotejo_justo(partidos)
 
         for r in range(1, 5):
-            st.header(f"🏁 RONDA {r}")
+            st.markdown(f"### RONDA {r}")
             col_p = f"P{r}"
             
             for i, (roj, ver) in enumerate(peleas):
@@ -108,27 +113,29 @@ with tab2:
                 
                 st.markdown(f"""
                 <div class="pelea-card">
-                    <div style="text-align: center; border-bottom: 1px solid #555; margin-bottom: 15px; font-weight: bold;">
+                    <div style="text-align: center; border-bottom: 1px solid #444; padding-bottom: 5px; font-weight: bold; letter-spacing: 2px;">
                         PELEA #{i+1}
                     </div>
                     <div class="fila-pelea">
                         <div class="lado">
-                            <span class="rojo-text">ROJO:</span> {roj['PARTIDO']} <span class="casilla">G [ ]</span><br>
-                            <small>P: {roj[col_p]:.3f} | A: {(i*2)+1:03}</small>
+                            <div class="rojo-text">{roj['PARTIDO']}</div>
+                            <div style="margin-top:5px;">P: {roj[col_p]:.3f} | A: {(i*2)+1:03}</div>
+                            <div class="casilla-voto">G [ ]</div>
                         </div>
-                        <div style="text-align: center;">
-                            <b>VS</b><br>
-                            <small>E [ ]</small>
+                        <div class="centro">
+                            <div style="font-weight: bold; font-size: 1.2em;">VS</div>
+                            <div class="casilla-voto" style="margin-top:10px;">E [ ]</div>
                         </div>
                         <div class="lado" style="text-align: right;">
-                            <span class="verde-text">VERDE:</span> {ver['PARTIDO']} <span class="casilla">G [ ]</span><br>
-                            <small>P: {ver[col_p]:.3f} | A: {(i*2)+2:03}</small>
+                            <div class="verde-text">{ver['PARTIDO']}</div>
+                            <div style="margin-top:5px;">P: {ver[col_p]:.3f} | A: {(i*2)+2:03}</div>
+                            <div class="casilla-voto">G [ ]</div>
                         </div>
                     </div>
-                    <div style="text-align: center; margin-top: 15px; font-size: 11px; color: #888; border-top: 1px solid #444; padding-top: 5px;">
-                        DIFERENCIA DE PESO: {dif:.3f}
+                    <div class="footer-pelea">
+                        DIFERENCIA: {dif:.3f}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
     else:
-        st.info("Registre partidos para ver el cotejo.")
+        st.info("Registre los partidos en la pestaña anterior para generar el cotejo.")
