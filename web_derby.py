@@ -13,21 +13,15 @@ if "autenticado" not in st.session_state:
     st.stop()
 
 # --- 2. CONFIGURACIÓN ---
-st.set_page_config(page_title="DERBY V28", layout="centered")
+st.set_page_config(page_title="DERBY V28", layout="wide")
 
-# Estilos para que se vea bien en celular vertical
 st.markdown("""
     <style>
-    .reportview-container .main .block-container { padding-top: 1rem; }
-    .stTable { font-size: 14px !important; }
     .rojo { color: #ff4b4b; font-weight: bold; }
     .verde { color: #00c853; font-weight: bold; }
-    .card {
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        padding: 10px;
-        margin-bottom: 10px;
-        background-color: #f9f9f9;
+    @media print {
+        .no-print { display: none !important; }
+        .stMarkdown, .stTable { width: 100% !important; }
     }
     </style>
     """, unsafe_allow_html=True)
@@ -49,9 +43,9 @@ def guardar_todos(lista):
         for p in lista:
             f.write(f"{p['PARTIDO']}|{p['P1']}|{p['P2']}|{p['P3']}|{p['P4']}\n")
 
-# --- 3. REGISTRO ---
-st.title("🏆 Derby V28")
-
+# --- 3. REGISTRO (Oculto en Impresión) ---
+st.markdown('<div class="no-print">', unsafe_allow_html=True)
+st.title("🏆 Derby V28 - Registro")
 with st.expander("➕ REGISTRAR PARTIDO", expanded=False):
     nombre = st.text_input("Nombre del Partido:").upper()
     c1, c2 = st.columns(2)
@@ -61,45 +55,46 @@ with st.expander("➕ REGISTRAR PARTIDO", expanded=False):
     with c2:
         p3 = st.number_input("Peso 3", value=0.0, format="%.3f")
         p4 = st.number_input("Peso 4", value=0.0, format="%.3f")
-    
     if st.button("✅ GUARDAR REGISTRO", use_container_width=True):
         if nombre:
-            d = cargar_datos()
-            d.append({"PARTIDO": nombre, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
-            guardar_todos(d)
-            st.success("¡Guardado!")
-            st.rerun()
+            d = cargar_datos(); d.append({"PARTIDO": nombre, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
+            guardar_todos(d); st.rerun()
+st.markdown('</div>', unsafe_allow_html=True)
 
-# --- 4. COTEJO POR RONDAS CON ANILLO AUTOMÁTICO ---
+# --- 4. REPORTE PARA IMPRESIÓN (IDÉNTICO A LA FOTO) ---
 partidos = cargar_datos()
 if len(partidos) >= 2:
-    st.subheader("📋 Cotejo Oficial")
+    st.markdown("## 📋 HOJA DE COTEJO OFICIAL")
+    st.write("Fecha: 13/01/2026")
     
     for r in range(1, 5):
-        with st.expander(f"🥊 RONDA {r}", expanded=(r==1)):
-            col_p = f"P{r}"
-            for i in range(0, len(partidos) - 1, 2):
-                p_rojo = partidos[i]
-                p_verde = partidos[i+1]
-                dif = abs(p_rojo[col_p] - p_verde[col_p])
-                
-                # --- AQUÍ SE LLENA EL ANILLO EN AUTOMÁTICO ---
-                # Asigna 001, 002, 003... según la posición en la lista
-                anillo_r = f"{(i + 1):03}"
-                anillo_v = f"{(i + 2):03}"
-                
-                # Formato de tabla limpia para celular
-                st.markdown(f"""
-                Pelea #{(i//2)+1}
-                | Lado | Partido | Peso | Anillo |
-                | :--- | :--- | :--- | :--- |
-                | <span class='rojo'>🔴 ROJO</span> | {p_rojo['PARTIDO']} | {p_rojo[col_p]:.3f} | *{anillo_r}* |
-                | <span class='verde'>🟢 VERDE</span> | {p_verde['PARTIDO']} | {p_verde[col_p]:.3f} | *{anillo_v}* |
-                | | | Dif: | {dif:.3f} |
-                """, unsafe_allow_html=True)
-                st.divider()
-
-    if st.button("🗑️ BORRAR TODO EL DERBY", type="secondary", use_container_width=True):
-        if os.path.exists(DB_FILE):
-            os.remove(DB_FILE)
-            st.rerun()
+        st.markdown(f"### RONDA {r}")
+        col_p = f"P{r}"
+        
+        datos_impresion = []
+        for i in range(0, len(partidos) - 1, 2):
+            rojo = partidos[i]
+            verde = partidos[i+1]
+            dif = abs(rojo[col_p] - verde[col_p])
+            
+            # Formato idéntico a la foto
+            datos_impresion.append({
+                "N°": (i//2) + 1,
+                "GAN (R)": "__",
+                "PARTIDO (ROJO)": rojo['PARTIDO'],
+                "PESO (R)": f"{rojo[col_p]:.3f}",
+                "ANILLO (R)": f"{(i+1):03}",
+                "EMPATE": "__",
+                "ANILLO (V)": f"{(i+2):03}",
+                "PESO (V)": f"{verde[col_p]:.3f}",
+                "PARTIDO (VERDE)": verde['PARTIDO'],
+                "GAN (V)": "__",
+                "DIF KG": f"{dif:.3f}"
+            })
+        
+        st.table(pd.DataFrame(datos_impresion))
+    
+    st.markdown('<div class="no-print">', unsafe_allow_html=True)
+    if st.button("🗑️ BORRAR TODO", type="secondary"):
+        if os.path.exists(DB_FILE): os.remove(DB_FILE); st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
