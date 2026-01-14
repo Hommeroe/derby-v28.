@@ -13,9 +13,8 @@ if "autenticado" not in st.session_state:
     st.stop()
 
 # --- 2. CONFIGURACIÓN ---
-st.set_page_config(page_title="DERBY V28", layout="wide") # Layout wide para horizontal completo
+st.set_page_config(page_title="DERBY V28", layout="wide")
 
-# Estilos CSS
 st.markdown("""
     <style>
     @media print { .no-print { display: none !important; } }
@@ -32,7 +31,16 @@ def cargar_datos():
             for linea in f:
                 p = linea.strip().split("|")
                 if len(p) == 5:
-                    partidos.append({"PARTIDO": p[0], "P1": float(p[1]), "P2": float(p[2]), "P3": float(p[3]), "P4": float(p[4])})
+                    try:
+                        partidos.append({
+                            "PARTIDO": p[0], 
+                            "P1": float(p[1]), 
+                            "P2": float(p[2]), 
+                            "P3": float(p[3]), 
+                            "P4": float(p[4])
+                        })
+                    except ValueError:
+                        continue # Salta líneas mal escritas para evitar el error de tus fotos
     return partidos
 
 def guardar_todos(lista):
@@ -40,7 +48,7 @@ def guardar_todos(lista):
         for p in lista:
             f.write(f"{p['PARTIDO']}|{p['P1']}|{p['P2']}|{p['P3']}|{p['P4']}\n")
 
-# --- 3. CREACIÓN DE PANTALLAS (TABS) ---
+# --- 3. PESTAÑAS ---
 tab1, tab2 = st.tabs(["📝 REGISTRO Y DATOS", "🏆 HOJA DE COTEJO FINAL"])
 
 with tab1:
@@ -60,14 +68,20 @@ with tab1:
         
         if st.button("💾 GUARDAR", use_container_width=True):
             if nombre:
-                d = cargar_datos(); d.append({"PARTIDO": nombre, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
-                guardar_todos(d); st.rerun()
+                d = cargar_datos()
+                d.append({"PARTIDO": nombre, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
+                guardar_todos(d)
+                st.rerun()
 
     with col_lista:
         st.subheader("Registrados")
         partidos = cargar_datos()
         if partidos:
-            st.dataframe(pd.DataFrame(partidos), use_container_width=True, height=250)
+            df_lista = pd.DataFrame(partidos)
+            # --- AQUÍ AJUSTAMOS PARA QUE EMPIECE EN 1 ---
+            df_lista.index = range(1, len(df_lista) + 1) 
+            st.dataframe(df_lista, use_container_width=True, height=250)
+            
             if st.button("🗑️ REINICIAR TODO"):
                 if os.path.exists(DB_FILE): os.remove(DB_FILE); st.rerun()
 
@@ -75,7 +89,6 @@ with tab2:
     partidos = cargar_datos()
     if len(partidos) >= 2:
         st.markdown("<h1 style='text-align: center;'>📋 HOJA DE COTEJO OFICIAL</h1>", unsafe_allow_html=True)
-        st.write("---")
         
         for r in range(1, 5):
             st.markdown(f"## 🏁 RONDA {r}")
@@ -84,6 +97,8 @@ with tab2:
             for i in range(0, len(partidos) - 1, 2):
                 rojo = partidos[i]; verde = partidos[i+1]
                 dif = abs(rojo[col_p] - verde[col_p])
+                
+                # Ajustamos números de pelea y anillos para que no haya ceros
                 filas.append({
                     "PELEA": (i//2) + 1,
                     "GAN (R)": "[  ]",
@@ -97,7 +112,8 @@ with tab2:
                     "GAN (V)": "[  ]",
                     "DIF KG": f"{dif:.3f}"
                 })
-            st.table(pd.DataFrame(filas))
-            st.write(" ")
+            df_cotejo = pd.DataFrame(filas)
+            df_cotejo.index = range(1, len(df_cotejo) + 1) # También aquí empieza en 1
+            st.table(df_cotejo)
     else:
-        st.info("La hoja de cotejo aparecerá aquí cuando tengas al menos 2 partidos registrados.")
+        st.info("Registre al menos 2 partidos para ver el cotejo.")
