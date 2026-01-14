@@ -17,8 +17,19 @@ st.set_page_config(page_title="DERBY V28", layout="wide")
 
 st.markdown("""
     <style>
+    /* Estilo para las tarjetas en el celular */
+    .pelea-card {
+        background-color: #1e1e1e;
+        border: 2px solid #444;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 20px;
+        color: white;
+    }
+    .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 18px; }
+    .verde-text { color: #00c853; font-weight: bold; font-size: 18px; }
+    .info-box { background: #333; padding: 5px 10px; border-radius: 5px; margin: 5px 0; }
     @media print { .no-print { display: none !important; } }
-    .stTable { width: 100% !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -32,11 +43,7 @@ def cargar_datos():
                 p = linea.strip().split("|")
                 if len(p) == 5:
                     try:
-                        partidos.append({
-                            "PARTIDO": p[0], 
-                            "P1": float(p[1]), "P2": float(p[2]), 
-                            "P3": float(p[3]), "P4": float(p[4])
-                        })
+                        partidos.append({"PARTIDO": p[0], "P1": float(p[1]), "P2": float(p[2]), "P3": float(p[3]), "P4": float(p[4])})
                     except ValueError: continue
     return partidos
 
@@ -46,75 +53,78 @@ def guardar_todos(lista):
             f.write(f"{p['PARTIDO']}|{p['P1']}|{p['P2']}|{p['P3']}|{p['P4']}\n")
 
 # --- 3. PESTAÑAS ---
-tab1, tab2 = st.tabs(["📝 REGISTRO Y EDICIÓN", "🏆 HOJA DE COTEJO FINAL"])
+tab1, tab2 = st.tabs(["📝 REGISTRO", "🏆 COTEJO FINAL"])
 
 with tab1:
     st.title("Control de Pesaje")
     partidos = cargar_datos()
-    
-    col_reg, col_lista = st.columns([1, 1])
-    
-    with col_reg:
-        st.subheader("Captura Nuevo")
-        nombre = st.text_input("Nombre del Partido:").upper()
-        c1, c2 = st.columns(2)
-        with c1:
-            p1 = st.number_input("Peso 1", value=0.0, format="%.3f", key="n1")
-            p2 = st.number_input("Peso 2", value=0.0, format="%.3f", key="n2")
-        with c2:
-            p3 = st.number_input("Peso 3", value=0.0, format="%.3f", key="n3")
-            p4 = st.number_input("Peso 4", value=0.0, format="%.3f", key="n4")
-        
-        if st.button("💾 GUARDAR NUEVO", use_container_width=True):
-            if nombre:
-                partidos.append({"PARTIDO": nombre, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.subheader("Nuevo Partido")
+        n = st.text_input("Nombre:").upper()
+        p1 = st.number_input("Peso 1", format="%.3f")
+        p2 = st.number_input("Peso 2", format="%.3f")
+        p3 = st.number_input("Peso 3", format="%.3f")
+        p4 = st.number_input("Peso 4", format="%.3f")
+        if st.button("💾 GUARDAR", use_container_width=True):
+            if n:
+                partidos.append({"PARTIDO": n, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
                 guardar_todos(partidos); st.rerun()
-
-    with col_lista:
+    with col2:
         st.subheader("Registrados")
         if partidos:
-            df_lista = pd.DataFrame(partidos)
-            df_lista.index = range(1, len(df_lista) + 1)
-            st.dataframe(df_lista, use_container_width=True, height=200)
-            
-            # --- SECCIÓN DE EDICIÓN ---
-            with st.expander("✏️ EDITAR REGISTRO"):
-                idx_edit = st.number_input("Número a editar:", min_value=1, max_value=len(partidos), step=1)
-                p_edit = partidos[idx_edit - 1]
-                
-                nuevo_n = st.text_input("Editar Nombre:", value=p_edit["PARTIDO"]).upper()
-                ce1, ce2 = st.columns(2)
-                e1 = ce1.number_input("Peso 1", value=p_edit["P1"], format="%.3f", key="e1")
-                e2 = ce1.number_input("Peso 2", value=p_edit["P2"], format="%.3f", key="e2")
-                e3 = ce2.number_input("Peso 3", value=p_edit["P3"], format="%.3f", key="e3")
-                e4 = ce2.number_input("Peso 4", value=p_edit["P4"], format="%.3f", key="e4")
-                
-                if st.button("✅ ACTUALIZAR DATOS", use_container_width=True):
-                    partidos[idx_edit - 1] = {"PARTIDO": nuevo_n, "P1": e1, "P2": e2, "P3": e3, "P4": e4}
-                    guardar_todos(partidos); st.success("Actualizado"); st.rerun()
-
-            if st.button("🗑️ REINICIAR TODO EL DERBY"):
+            df = pd.DataFrame(partidos)
+            df.index = range(1, len(df)+1)
+            st.dataframe(df, use_container_width=True)
+            if st.button("🗑️ REINICIAR TODO"):
                 if os.path.exists(DB_FILE): os.remove(DB_FILE); st.rerun()
 
 with tab2:
     partidos = cargar_datos()
     if len(partidos) >= 2:
-        st.markdown("<h1 style='text-align: center;'>📋 HOJA DE COTEJO OFICIAL</h1>", unsafe_allow_html=True)
+        st.title("📋 Hoja de Cotejo")
+        
+        # ELIGE VISTA SEGÚN EL DISPOSITIVO
+        opcion_vista = st.radio("Formato de vista:", ["📱 Celular (Fichas)", "💻 Laptop (Tabla)"], horizontal=True)
+        st.divider()
+
         for r in range(1, 5):
-            st.markdown(f"## 🏁 RONDA {r}")
-            col_p = f"P{r}"; filas = []
-            for i in range(0, len(partidos) - 1, 2):
-                rojo = partidos[i]; verde = partidos[i+1]
-                dif = abs(rojo[col_p] - verde[col_p])
-                filas.append({
-                    "PELEA": (i//2) + 1, "GAN (R)": "[  ]",
-                    "PARTIDO (ROJO)": rojo['PARTIDO'], "PESO (R)": f"{rojo[col_p]:.3f}",
-                    "ANILLO (R)": f"{(i+1):03}", "EMPATE": "[  ]",
-                    "ANILLO (V)": f"{(i+2):03}", "PESO (V)": f"{verde[col_p]:.3f}",
-                    "PARTIDO (VERDE)": verde['PARTIDO'], "GAN (V)": "[  ]", "DIF KG": f"{dif:.3f}"
-                })
-            df_cotejo = pd.DataFrame(filas)
-            df_cotejo.index = range(1, len(df_cotejo) + 1)
-            st.table(df_cotejo)
+            st.header(f"🏁 RONDA {r}")
+            col_p = f"P{r}"
+            
+            if opcion_vista == "💻 Laptop (Tabla)":
+                filas = []
+                for i in range(0, len(partidos) - 1, 2):
+                    roj, ver = partidos[i], partidos[i+1]
+                    dif = abs(roj[col_p] - ver[col_p])
+                    filas.append({
+                        "PELEA": (i//2)+1, "ROJO": roj['PARTIDO'], "PESO (R)": f"{roj[col_p]:.3f}", "ANILLO (R)": f"{(i+1):03}",
+                        "VS": "⚔️", "ANILLO (V)": f"{(i+2):03}", "PESO (V)": f"{ver[col_p]:.3f}", "VERDE": ver['PARTIDO'], "DIF": f"{dif:.3f}"
+                    })
+                st.table(pd.DataFrame(filas))
+            
+            else: # VISTA CELULAR (VERTICAL REAL)
+                for i in range(0, len(partidos) - 1, 2):
+                    roj, ver = partidos[i], partidos[i+1]
+                    dif = abs(roj[col_p] - ver[col_p])
+                    st.markdown(f"""
+                    <div class="pelea-card">
+                        <div style="text-align: center; border-bottom: 1px solid #444; margin-bottom: 10px;">
+                            <b>PELEA #{(i//2)+1}</b>
+                        </div>
+                        <div class="info-box">
+                            <span class="rojo-text">🔴 ROJO:</span> {roj['PARTIDO']}<br>
+                            <b>Peso:</b> {roj[col_p]:.3f} | <b>Anillo:</b> {(i+1):03}
+                        </div>
+                        <div style="text-align: center; margin: 5px 0;">⚡ VS ⚡</div>
+                        <div class="info-box">
+                            <span class="verde-text">🟢 VERDE:</span> {ver['PARTIDO']}<br>
+                            <b>Peso:</b> {ver[col_p]:.3f} | <b>Anillo:</b> {(i+2):03}
+                        </div>
+                        <div style="text-align: right; font-size: 12px; margin-top: 10px; color: #aaa;">
+                            DIFERENCIA: {dif:.3f}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
     else:
-        st.info("Registre al menos 2 partidos para ver el cotejo.")
+        st.info("Registre partidos para generar el cotejo.")
