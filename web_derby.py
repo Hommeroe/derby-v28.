@@ -13,9 +13,8 @@ if "autenticado" not in st.session_state:
     st.stop()
 
 # --- 2. CONFIGURACION ---
-st.set_page_config(page_title="DERBY V28 - PRO", layout="wide")
+st.set_page_config(page_title="DERBY V28 - JUEZ", layout="wide")
 
-# Estilos CSS para el diseño horizontal y colores
 st.markdown("""
     <style>
     .pelea-card { 
@@ -26,10 +25,11 @@ st.markdown("""
         margin-bottom: 20px; 
         color: white; 
     }
-    .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 20px; }
-    .verde-text { color: #00c853; font-weight: bold; font-size: 20px; }
+    .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 18px; }
+    .verde-text { color: #00c853; font-weight: bold; font-size: 18px; }
     .fila-pelea { display: flex; justify-content: space-between; align-items: center; }
     .lado { width: 45%; }
+    .casilla { border: 1px solid #777; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px; }
     @media print { .no-print { display: none !important; } }
     </style>
     """, unsafe_allow_html=True)
@@ -53,7 +53,6 @@ def guardar_todos(lista):
         for p in lista:
             f.write(f"{p['PARTIDO']}|{p['P1']}|{p['P2']}|{p['P3']}|{p['P4']}\n")
 
-# Algoritmo para evitar que un partido pelee contra sí mismo
 def generar_cotejo_justo(lista_original):
     lista = lista_original.copy()
     cotejo = []
@@ -81,10 +80,10 @@ with tab1:
     with col1:
         st.subheader("Captura")
         n = st.text_input("Nombre Partido:").upper()
-        p1 = st.number_input("Peso 1", format="%.3f")
-        p2 = st.number_input("Peso 2", format="%.3f")
-        p3 = st.number_input("Peso 3", format="%.3f")
-        p4 = st.number_input("Peso 4", format="%.3f")
+        p1 = st.number_input("Peso 1", format="%.3f", key="n1")
+        p2 = st.number_input("Peso 2", format="%.3f", key="n2")
+        p3 = st.number_input("Peso 3", format="%.3f", key="n3")
+        p4 = st.number_input("Peso 4", format="%.3f", key="n4")
         if st.button("💾 GUARDAR"):
             if n:
                 partidos.append({"PARTIDO": n, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
@@ -107,25 +106,27 @@ with tab2:
             for i, (roj, ver) in enumerate(peleas):
                 dif = abs(roj[col_p] - ver[col_p])
                 
-                # LA CLAVE: unsafe_allow_html=True al final del markdown
                 st.markdown(f"""
                 <div class="pelea-card">
-                    <div style="text-align: center; border-bottom: 1px solid #555; margin-bottom: 15px;">
-                        <b>PELEA #{i+1}</b>
+                    <div style="text-align: center; border-bottom: 1px solid #555; margin-bottom: 15px; font-weight: bold;">
+                        PELEA #{i+1}
                     </div>
                     <div class="fila-pelea">
                         <div class="lado">
-                            <span class="rojo-text">ROJO:</span> {roj['PARTIDO']}<br>
+                            <span class="rojo-text">ROJO:</span> {roj['PARTIDO']} <span class="casilla">G [ ]</span><br>
                             <small>P: {roj[col_p]:.3f} | A: {(i*2)+1:03}</small>
                         </div>
-                        <div style="font-weight: bold;">VS</div>
+                        <div style="text-align: center;">
+                            <b>VS</b><br>
+                            <small>E [ ]</small>
+                        </div>
                         <div class="lado" style="text-align: right;">
-                            <span class="verde-text">VERDE:</span> {ver['PARTIDO']}<br>
+                            <span class="verde-text">VERDE:</span> {ver['PARTIDO']} <span class="casilla">G [ ]</span><br>
                             <small>P: {ver[col_p]:.3f} | A: {(i*2)+2:03}</small>
                         </div>
                     </div>
-                    <div style="text-align: center; margin-top: 10px; font-size: 12px; color: #888;">
-                        DIFERENCIA: {dif:.3f}
+                    <div style="text-align: center; margin-top: 15px; font-size: 11px; color: #888; border-top: 1px solid #444; padding-top: 5px;">
+                        DIFERENCIA DE PESO: {dif:.3f}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
