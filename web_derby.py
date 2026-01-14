@@ -85,12 +85,11 @@ with tab1:
         default_name = ""
         default_weights = [1.800] * tipo_derby
         
-        if st.session_state.edit_index is not None:
-            if st.session_state.edit_index < len(partidos):
-                p_edit = partidos[st.session_state.edit_index]
-                default_name = p_edit["PARTIDO"]
-                for i in range(tipo_derby):
-                    default_weights[i] = p_edit.get(f"Peso {i+1}", 1.800)
+        if st.session_state.edit_index is not None and st.session_state.edit_index < len(partidos):
+            p_edit = partidos[st.session_state.edit_index]
+            default_name = p_edit["PARTIDO"]
+            for i in range(tipo_derby):
+                default_weights[i] = p_edit.get(f"Peso {i+1}", 1.800)
 
         with st.form("registro_form", clear_on_submit=(st.session_state.edit_index is None)):
             label_modo = "🟠 EDITANDO PARTIDO" if st.session_state.edit_index is not None else "🟢 NUEVO REGISTRO"
@@ -101,7 +100,7 @@ with tab1:
                 p = st.number_input(f"Peso Gallo {i}", 1.800, 2.680, default_weights[i-1], 0.001, format="%.3f")
                 pesos_input.append(p)
             
-            btn_save = st.form_submit_button("💾 GUARDAR EN LISTA")
+            btn_save = st.form_submit_button("💾 GUARDAR CAMBIOS" if st.session_state.edit_index is not None else "💾 GUARDAR EN LISTA")
 
             if btn_save and n:
                 nuevo_p = {"PARTIDO": n}
@@ -124,14 +123,17 @@ with tab1:
             cols_peso = [c for c in df.columns if "Peso" in c]
             st.dataframe(df.style.format(subset=cols_peso, formatter="{:.3f}"), use_container_width=True)
             
-            idx_to_edit = st.selectbox("Selecciona para corregir:", range(1, len(partidos) + 1), 
-                                        format_func=lambda x: f"Partido {x}: {partidos[x-1]['PARTIDO']}")
+            # Selector sin etiqueta arriba para que se vea más profesional
+            idx_to_edit = st.selectbox("", range(1, len(partidos) + 1), 
+                                        format_func=lambda x: f"Seleccionar: {partidos[x-1]['PARTIDO']}",
+                                        label_visibility="collapsed")
             
-            if st.button("✏️ EDITAR SELECCIONADO"):
+            if st.button("✏️ EDITAR SELECCIONADO", use_container_width=True):
                 st.session_state.edit_index = idx_to_edit - 1
                 st.rerun()
 
-            if st.button("🗑️ LIMPIAR TODO EL EVENTO"):
+            st.write("---")
+            if st.button("🗑️ LIMPIAR TODO EL EVENTO", use_container_width=True):
                 if os.path.exists(DB_FILE): os.remove(DB_FILE)
                 st.session_state.edit_index = None
                 st.rerun()
