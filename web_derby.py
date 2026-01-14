@@ -5,25 +5,29 @@ import os
 # --- 1. SEGURIDAD ---
 if "autenticado" not in st.session_state:
     st.title("🔐 Acceso Privado")
-    password = st.text_input("Clave:", type="password")
+    password = st.text_input("Clave del Palenque:", type="password")
     if st.button("Entrar"):
         if password == "2026":
             st.session_state["autenticado"] = True
             st.rerun()
     st.stop()
 
-# --- 2. CONFIGURACIÓN (Optimizada para Móvil) ---
+# --- 2. CONFIGURACIÓN ---
 st.set_page_config(page_title="DERBY V28", layout="centered")
 
-# CSS inyectado para forzar que las tablas no estiren la pantalla
+# Estilos para que se vea bien en celular vertical
 st.markdown("""
     <style>
-    .stTable {
-        font-size: 12px !important;
-    }
-    div[data-testid="stExpander"] div[role="button"] p {
-        font-size: 14px;
-        font-weight: bold;
+    .reportview-container .main .block-container { padding-top: 1rem; }
+    .stTable { font-size: 14px !important; }
+    .rojo { color: #ff4b4b; font-weight: bold; }
+    .verde { color: #00c853; font-weight: bold; }
+    .card {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -49,47 +53,48 @@ def guardar_todos(lista):
 st.title("🏆 Derby V28")
 
 with st.expander("➕ REGISTRAR PARTIDO", expanded=False):
-    nombre = st.text_input("Nombre:").upper()
+    nombre = st.text_input("Nombre del Partido:").upper()
     c1, c2 = st.columns(2)
     with c1:
-        p1 = st.number_input("P1", value=0.0, format="%.3f")
-        p2 = st.number_input("P2", value=0.0, format="%.3f")
+        p1 = st.number_input("Peso 1", value=0.0, format="%.3f")
+        p2 = st.number_input("Peso 2", value=0.0, format="%.3f")
     with c2:
-        p3 = st.number_input("P3", value=0.0, format="%.3f")
-        p4 = st.number_input("P4", value=0.0, format="%.3f")
+        p3 = st.number_input("Peso 3", value=0.0, format="%.3f")
+        p4 = st.number_input("Peso 4", value=0.0, format="%.3f")
     
-    if st.button("✅ GUARDAR", use_container_width=True):
+    if st.button("✅ GUARDAR REGISTRO", use_container_width=True):
         if nombre:
             d = cargar_datos()
             d.append({"PARTIDO": nombre, "P1": p1, "P2": p2, "P3": p3, "P4": p4})
             guardar_todos(d)
+            st.success("¡Guardado!")
             st.rerun()
 
-# --- 4. COTEJO PROFESIONAL (MODO MÓVIL) ---
+# --- 4. COTEJO POR RONDAS (MODO VERTICAL) ---
 partidos = cargar_datos()
 if len(partidos) >= 2:
-    st.subheader("📋 Cotejo por Rondas")
+    st.subheader("📋 Cotejo Oficial")
     
     for r in range(1, 5):
         with st.expander(f"🥊 RONDA {r}", expanded=(r==1)):
             col_p = f"P{r}"
             for i in range(0, len(partidos) - 1, 2):
-                r_partido = partidos[i]
-                v_partido = partidos[i+1]
-                dif = abs(r_partido[col_p] - v_partido[col_p])
+                p_rojo = partidos[i]
+                p_verde = partidos[i+1]
+                dif = abs(p_rojo[col_p] - p_verde[col_p])
                 
-                # Diseño tipo "Card" para que quepa en vertical
+                # Formato de tabla limpia para celular
                 st.markdown(f"""
-                *Cotejo { (i//2)+1 }*
+                *Pelea #{(i//2)+1}*
                 | Lado | Partido | Peso | Anillo |
                 | :--- | :--- | :--- | :--- |
-                | <span style='color:red'>🔴 ROJO</span> | *{r_partido['PARTIDO']}* | {r_partido[col_p]:.3f} | __ |
-                | <span style='color:green'>🟢 VERDE</span> | *{v_partido['PARTIDO']}* | {v_partido[col_p]:.3f} | __ |
+                | <span class='rojo'>🔴 ROJO</span> | {p_rojo['PARTIDO']} | {p_rojo[col_p]:.3f} | __ |
+                | <span class='verde'>🟢 VERDE</span> | {p_verde['PARTIDO']} | {p_verde[col_p]:.3f} | __ |
                 | | | Dif: | {dif:.3f} |
-                """)
+                """, unsafe_allow_html=True)
                 st.divider()
 
-    if st.button("🗑️ BORRAR DATOS", type="secondary", use_container_width=True):
+    if st.button("🗑️ BORRAR TODO EL DERBY", type="secondary", use_container_width=True):
         if os.path.exists(DB_FILE):
             os.remove(DB_FILE)
             st.rerun()
