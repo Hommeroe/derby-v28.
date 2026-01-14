@@ -17,7 +17,27 @@ st.set_page_config(page_title="DERBY V28", layout="wide")
 
 st.markdown("""
     <style>
-    /* Estilo para las tarjetas en el celular */
+    /* Estilo para impresión: 2 cuadros por fila */
+    @media print {
+        .no-print { display: none !important; }
+        .print-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .pelea-card-print {
+            width: 48%; /* Hace que quepan dos por fila */
+            border: 1px solid #000;
+            margin-bottom: 10px;
+            padding: 10px;
+            page-break-inside: avoid;
+            color: black !important;
+            background: white !important;
+        }
+        body { background-color: white !important; color: black !important; }
+    }
+    
+    /* Estilo para pantalla (Fichas) */
     .pelea-card {
         background-color: #1e1e1e;
         border: 2px solid #444;
@@ -26,10 +46,9 @@ st.markdown("""
         margin-bottom: 20px;
         color: white;
     }
-    .rojo-text { color: #ff4b4b; font-weight: bold; font-size: 18px; }
-    .verde-text { color: #00c853; font-weight: bold; font-size: 18px; }
-    .info-box { background: #333; padding: 5px 10px; border-radius: 5px; margin: 5px 0; }
-    @media print { .no-print { display: none !important; } }
+    .rojo-text { color: #ff4b4b; font-weight: bold; }
+    .verde-text { color: #00c853; font-weight: bold; }
+    .info-box { background: #333; padding: 5px; border-radius: 5px; margin: 5px 0; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -53,7 +72,7 @@ def guardar_todos(lista):
             f.write(f"{p['PARTIDO']}|{p['P1']}|{p['P2']}|{p['P3']}|{p['P4']}\n")
 
 # --- 3. PESTAÑAS ---
-tab1, tab2 = st.tabs(["?? REGISTRO", "?? COTEJO FINAL"])
+tab1, tab2 = st.tabs(["?? REGISTRO", "?? COTEJO E IMPRESIÓN"])
 
 with tab1:
     st.title("Control de Pesaje")
@@ -84,47 +103,47 @@ with tab2:
     if len(partidos) >= 2:
         st.title("?? Hoja de Cotejo")
         
-        # ELIGE VISTA SEGÚN EL DISPOSITIVO
-        opcion_vista = st.radio("Formato de vista:", ["?? Celular (Fichas)", "?? Laptop (Tabla)"], horizontal=True)
-        st.divider()
+        # Botón para activar modo impresión
+        st.markdown('<div class="no-print">', unsafe_allow_html=True)
+        modo_impresion = st.checkbox("?? Activar modo impresión (2 por fila)")
+        st.info("?? Si activas este modo, presiona Ctrl + P para imprimir.")
+        st.markdown('</div>', unsafe_allow_html=True)
 
         for r in range(1, 5):
             st.header(f"?? RONDA {r}")
             col_p = f"P{r}"
             
-            if opcion_vista == "?? Laptop (Tabla)":
-                filas = []
-                for i in range(0, len(partidos) - 1, 2):
-                    roj, ver = partidos[i], partidos[i+1]
-                    dif = abs(roj[col_p] - ver[col_p])
-                    filas.append({
-                        "PELEA": (i//2)+1, "ROJO": roj['PARTIDO'], "PESO (R)": f"{roj[col_p]:.3f}", "ANILLO (R)": f"{(i+1):03}",
-                        "VS": "??", "ANILLO (V)": f"{(i+2):03}", "PESO (V)": f"{ver[col_p]:.3f}", "VERDE": ver['PARTIDO'], "DIF": f"{dif:.3f}"
-                    })
-                st.table(pd.DataFrame(filas))
+            # Contenedor que cambia si es para imprimir
+            if modo_impresion:
+                st.markdown('<div class="print-container">', unsafe_allow_html=True)
             
-            else: # VISTA CELULAR (VERTICAL REAL)
-                for i in range(0, len(partidos) - 1, 2):
-                    roj, ver = partidos[i], partidos[i+1]
-                    dif = abs(roj[col_p] - ver[col_p])
-                    st.markdown(f"""
-                    <div class="pelea-card">
-                        <div style="text-align: center; border-bottom: 1px solid #444; margin-bottom: 10px;">
-                            <b>PELEA #{(i//2)+1}</b>
-                        </div>
-                        <div class="info-box">
-                            <span class="rojo-text">?? ROJO:</span> {roj['PARTIDO']}<br>
-                            <b>Peso:</b> {roj[col_p]:.3f} | <b>Anillo:</b> {(i+1):03}
-                        </div>
-                        <div style="text-align: center; margin: 5px 0;">? VS ?</div>
-                        <div class="info-box">
-                            <span class="verde-text">?? VERDE:</span> {ver['PARTIDO']}<br>
-                            <b>Peso:</b> {ver[col_p]:.3f} | <b>Anillo:</b> {(i+2):03}
-                        </div>
-                        <div style="text-align: right; font-size: 12px; margin-top: 10px; color: #aaa;">
-                            DIFERENCIA: {dif:.3f}
-                        </div>
+            for i in range(0, len(partidos) - 1, 2):
+                roj, ver = partidos[i], partidos[i+1]
+                dif = abs(roj[col_p] - ver[col_p])
+                
+                clase_card = "pelea-card-print" if modo_impresion else "pelea-card"
+                
+                st.markdown(f"""
+                <div class="{clase_card}">
+                    <div style="text-align: center; border-bottom: 1px solid #666; font-weight: bold;">
+                        PELEA #{(i//2)+1}
                     </div>
-                    """, unsafe_allow_html=True)
+                    <div class="info-box">
+                        <span class="rojo-text">?? ROJO:</span> {roj['PARTIDO']}<br>
+                        P: {roj[col_p]:.3f} | A: {(i+1):03} [ ]
+                    </div>
+                    <div style="text-align: center; font-size: 10px;">? VS ?</div>
+                    <div class="info-box">
+                        <span class="verde-text">?? VERDE:</span> {ver['PARTIDO']}<br>
+                        P: {ver[col_p]:.3f} | A: {(i+2):03} [ ]
+                    </div>
+                    <div style="text-align: right; font-size: 10px;">
+                        EMPATE [ ] | DIF: {dif:.3f}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            if modo_impresion:
+                st.markdown('</div>', unsafe_allow_html=True)
     else:
         st.info("Registre partidos para generar el cotejo.")
